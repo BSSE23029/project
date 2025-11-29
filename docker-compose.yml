@@ -1,15 +1,17 @@
 version: '3.8'
-
 services:
-  # Service 1: The Web App
   web-app:
     build: .
     ports:
       - "5000:5000"
     depends_on:
       - redis-db
-
-  # Service 2: The Database
-  # CRITICAL: This name 'redis-db' matches the host in main.py
+  
   redis-db:
     image: "redis:alpine"
+    # PHASE 3 CHALLENGE: ADD VOLUME
+    volumes:
+      - redis_data:/data 
+
+volumes:
+  redis_data:
