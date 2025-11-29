@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  # Service 1: The Web App
+  web-app:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis-db
+
+  # Service 2: The Database
+  # CRITICAL: This name 'redis-db' matches the host in main.py
+  redis-db:
+    image: "redis:alpine"
