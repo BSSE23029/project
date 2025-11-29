@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // REPLACE THIS WITH YOUR USERNAME
-        DOCKER_IMAGE = 'YOUR_DOCKERHUB_USERNAME/devops-assessment'
+        DOCKER_IMAGE = 'codesraza/devops-assessment'
         // You must create this ID in Jenkins credentials
         DOCKER_CREDS_ID = 'docker-hub-login' 
     }
