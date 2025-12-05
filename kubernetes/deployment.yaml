@@ -14,7 +14,10 @@ spec:
     spec:
       containers:
       - name: devsolutions-app
-        image: devsolutions-app:v2 
+        image: devsolutions-app:2   # <--- Using the tag '2' you confirmed exists
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
+        env:                          # <--- LOOK HERE! It must be 'env', NOT 'environment'
+        - name: REDIS_HOST
+          value: "redis-service"
