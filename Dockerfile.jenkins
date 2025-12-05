@@ -1,0 +1,20 @@
+# Start with the official Jenkins image
+FROM jenkins/jenkins:lts
+
+# Switch to root to install tools
+USER root
+
+# 1. Install Docker CLI (ARM64 for Mac Silicon)
+RUN cd /tmp && \
+    curl -fsSLO https://download.docker.com/linux/static/stable/aarch64/docker-24.0.6.tgz && \
+    tar xzvf docker-24.0.6.tgz && \
+    mv docker/docker /usr/bin/ && \
+    rm -rf docker docker-24.0.6.tgz
+
+# 2. Install Kubectl (ARM64)
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/
+
+# Switch back to Jenkins user is optional, but for this lab 
+# we stay as root to ensure we can access the Docker Socket easily.

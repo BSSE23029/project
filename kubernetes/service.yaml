@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build: ./app
@@ -7,11 +9,13 @@ services:
       - REDIS_HOST=redis-db
     depends_on:
       - redis-db
+    restart: always  # Helps recover if killed
     networks:
       - dev-net
 
   redis-db:
     image: redis:alpine
+    container_name: dev-redis
     volumes:
       - redis-data:/data
     networks:

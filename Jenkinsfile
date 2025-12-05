@@ -1,29 +1,30 @@
 pipeline {
     agent any
-
+    
     environment {
-        // REPLACE THIS WITH YOUR USERNAME
-        DOCKER_IMAGE = 'codesraza/devops-assessment'
-        // You must create this ID in Jenkins credentials
-        DOCKER_CREDS_ID = 'docker-hub-login' 
+        // Change this to your DockerHub username
+        DOCKER_IMAGE = "codesraza/devsolutions-app" 
+        TAG = "build-${BUILD_NUMBER}"
     }
 
     stages {
         stage('Build Image') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                    echo 'Building Docker Image...'
+                    // Building from the app directory
+                    sh "docker build -t ${DOCKER_IMAGE}:${TAG} ./app"
                 }
             }
         }
 
-        stage('Push to Hub') {
+        stage('Push Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        sh "docker login -u $USER -p $PASS"
-                        sh "docker push ${DOCKER_IMAGE}:latest"
-                    }
+                    echo 'Pushing to Registry...'
+                    // Assumes you are logged in to docker on the agent
+                    // sh "docker push ${DOCKER_IMAGE}:${TAG}" 
+                    echo "Skipping push for local lab speed, simulating push..."
                 }
             }
         }
@@ -31,11 +32,18 @@ pipeline {
         stage('Deploy to K8s') {
             steps {
                 script {
-                    // This assumes kubectl is set up on the Jenkins machine
-                    sh 'kubectl apply -f kubernetes/'
-                    // Force a restart to pick up the new image
-                    sh 'kubectl rollout restart deployment/web-app-deployment'
+                    echo 'Deploying to Kubernetes...'
+                    // Updates the image tag in deployment on the fly
+                    sh """
+                    kubectl set image deployment/devsolutions-deployment devsolutions-app=${DOCKER_IMAGE}:${TAG} --record
+                    """
                 }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                sh "kubectl rollout status deployment/devsolutions-deployment"
             }
         }
     }

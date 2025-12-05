@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devsolutions-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devsolutions
+  template:
+    metadata:
+      labels:
+        app: devsolutions
+    spec:
+      containers:
+      - name: devsolutions-app
+        image: devsolutions-app:v2 
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
