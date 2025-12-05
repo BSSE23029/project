@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        // We use a local tag so we don't need to push to DockerHub for this lab
         IMAGE_NAME = "devsolutions-app"
         TAG = "${BUILD_NUMBER}"
+        // Define a temp path for the modified config
+        KUBECONFIG_FIX = "${WORKSPACE}/kube_config_fixed" 
     }
 
     stages {
@@ -12,7 +13,6 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image..."
-                    // This builds the image on your Mac's Docker daemon
                     sh "docker build -t ${IMAGE_NAME}:${TAG} ./app"
                 }
             }
@@ -21,11 +21,21 @@ pipeline {
         stage('Deploy to K8s') {
             steps {
                 script {
-                    echo "Updating Kubernetes..."
-                    // Updates the running deployment with the new image tag
-                    // "devsolutions-deployment" must match your YAML file name from Phase 2
-                    // "devsolutions-app" must match the container name in your YAML
-                    sh "kubectl set image deployment/devsolutions-deployment devsolutions-app=${IMAGE_NAME}:${TAG}"
+                    echo "Fixing Kubeconfig for Mac Docker..."
+                    
+                    // 1. Copy the mounted config to workspace so we don't break the original
+                    sh "cp /root/.kube/config ${KUBECONFIG_FIX}"
+                    
+                    // 2. Replace localhost/127.0.0.1 with host.docker.internal
+                    sh "sed -i 's/127.0.0.1/host.docker.internal/g' ${KUBECONFIG_FIX}"
+                    sh "sed -i 's/localhost/host.docker.internal/g' ${KUBECONFIG_FIX}"
+                    
+                    // 3. Disable TLS verification (Certificate usually doesn't match host.docker.internal)
+                    sh "kubectl --kubeconfig=${KUBECONFIG_FIX} config set-cluster docker-desktop --insecure-skip-tls-verify=true"
+
+                    echo "Deploying..."
+                    // 4. Run the deploy command using the FIXED config
+                    sh "kubectl --kubeconfig=${KUBECONFIG_FIX} set image deployment/devsolutions-deployment devsolutions-app=${IMAGE_NAME}:${TAG}"
                 }
             }
         }
@@ -33,7 +43,8 @@ pipeline {
         stage('Verify') {
             steps {
                 script {
-                    sh "kubectl rollout status deployment/devsolutions-deployment"
+                    // Use the fixed config for verification too
+                    sh "kubectl --kubeconfig=${KUBECONFIG_FIX} rollout status deployment/devsolutions-deployment"
                     echo "Deployment Successful!"
                 }
             }
