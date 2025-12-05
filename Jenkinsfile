@@ -1,30 +1,19 @@
 pipeline {
     agent any
-    
+
     environment {
-        // Change this to your DockerHub username
-        DOCKER_IMAGE = "codesraza/devsolutions-app" 
-        TAG = "build-${BUILD_NUMBER}"
+        // We use a local tag so we don't need to push to DockerHub for this lab
+        IMAGE_NAME = "devsolutions-app"
+        TAG = "${BUILD_NUMBER}"
     }
 
     stages {
         stage('Build Image') {
             steps {
                 script {
-                    echo 'Building Docker Image...'
-                    // Building from the app directory
-                    sh "docker build -t ${DOCKER_IMAGE}:${TAG} ./app"
-                }
-            }
-        }
-
-        stage('Push Image') {
-            steps {
-                script {
-                    echo 'Pushing to Registry...'
-                    // Assumes you are logged in to docker on the agent
-                    // sh "docker push ${DOCKER_IMAGE}:${TAG}" 
-                    echo "Skipping push for local lab speed, simulating push..."
+                    echo "Building Docker Image..."
+                    // This builds the image on your Mac's Docker daemon
+                    sh "docker build -t ${IMAGE_NAME}:${TAG} ./app"
                 }
             }
         }
@@ -32,18 +21,21 @@ pipeline {
         stage('Deploy to K8s') {
             steps {
                 script {
-                    echo 'Deploying to Kubernetes...'
-                    // Updates the image tag in deployment on the fly
-                    sh """
-                    kubectl set image deployment/devsolutions-deployment devsolutions-app=${DOCKER_IMAGE}:${TAG} --record
-                    """
+                    echo "Updating Kubernetes..."
+                    // Updates the running deployment with the new image tag
+                    // "devsolutions-deployment" must match your YAML file name from Phase 2
+                    // "devsolutions-app" must match the container name in your YAML
+                    sh "kubectl set image deployment/devsolutions-deployment devsolutions-app=${IMAGE_NAME}:${TAG}"
                 }
             }
         }
-        
-        stage('Verify Deployment') {
+
+        stage('Verify') {
             steps {
-                sh "kubectl rollout status deployment/devsolutions-deployment"
+                script {
+                    sh "kubectl rollout status deployment/devsolutions-deployment"
+                    echo "Deployment Successful!"
+                }
             }
         }
     }
