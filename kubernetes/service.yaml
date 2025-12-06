@@ -1,28 +1,12 @@
-version: '3.8'
-
-services:
-  backend:
-    build: ./app
-    ports:
-      - "5000:5000"
-    environment:
-      - REDIS_HOST=redis-db
-    depends_on:
-      - redis-db
-    restart: always  # Helps recover if killed
-    networks:
-      - dev-net
-
-  redis-db:
-    image: redis:alpine
-    container_name: dev-redis
-    volumes:
-      - redis-data:/data
-    networks:
-      - dev-net
-
-volumes:
-  redis-data:
-
-networks:
-  dev-net:
+apiVersion: v1 
+kind: Service
+metadata:
+name: devolutions-service
+spec:
+  type: NodePort
+  selector:
+    app: devolutions
+ports:
+  - port: 80
+    targetPort: 5000
+    nodePort: 30005
